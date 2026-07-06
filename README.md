@@ -1,5 +1,10 @@
 # ABC Hospital — AI Voice Appointment Assistant
 
+**Live Demo:** [https://medical-ai-assistant-puce.vercel.app/](https://medical-ai-assistant-puce.vercel.app/)
+**GitHub Repository:** [https://github.com/prajwalas1/medical-ai-assistant](https://github.com/prajwalas1/medical-ai-assistant)
+**Backend API:** [https://medical-ai-assistant-rx70.onrender.com/](https://medical-ai-assistant-rx70.onrender.com/)
+**API Documentation:** [https://medical-ai-assistant-rx70.onrender.com/docs](https://medical-ai-assistant-rx70.onrender.com/docs)
+
 An AI-powered voice receptionist for a hospital, built with [LiveKit Agents](https://docs.livekit.io/agents/), FastAPI, and React. Patients can call in (via a web client) and book, cancel, reschedule, or check appointment availability entirely by voice — in English, Hindi, or Kannada.
 
 ## Features
@@ -170,12 +175,28 @@ llm=openai.LLM(model="gpt-4o-mini", api_key=settings.OPENAI_API_KEY, temperature
 
 ## Deployment
 
-- **Frontend:** deploy to [Vercel](https://vercel.com/) — static React build.
-- **Backend:** requires **two separate long-running processes**:
-  1. The FastAPI app (`uvicorn app.main:app`) — can tolerate a platform that sleeps on idle.
-  2. The LiveKit agent worker (`python -m app.livekit.agent dev`) — must stay **always-on**, since it needs to remain registered with LiveKit Cloud to receive call dispatches. A free tier that spins down on inactivity will miss incoming calls.
+- **Frontend:** deployed on [Vercel](https://vercel.com/) — static React build.
+- **LiveKit:** hosted on [LiveKit Cloud](https://cloud.livekit.io/) — a managed service, not something you deploy yourself. Both the local agent worker and the deployed Render agent worker connect to the same LiveKit Cloud project via `LIVEKIT_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`, so these three values must be set identically (as environment variables) on every environment/service that runs `app.livekit.agent` or issues tokens.
+- **Backend:** deployed on [Render](https://render.com/) as **two separate services**, since the project has two independent long-running processes:
 
-Recommended: Render (free tier for the API, paid Starter tier for the always-on worker) or Railway (Hobby plan) for the backend.
+### 1. FastAPI API (Render Web Service)
+- **Root Directory:** `backend`
+- **Build Command:** `uv sync`
+- **Start Command:** `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Environment variables:** same as `backend/.env` (`DATABASE_URL`, `SARVAM_API_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and whichever LLM key(s) you're using)
+- Free tier is acceptable here — this service just issues tokens and serves REST endpoints, so occasional cold-start delay after inactivity is fine.
+- Live URL: `https://<your-render-service>.onrender.com`
+
+### 2. LiveKit Agent Worker (Render Background Worker)
+- **Root Directory:** `backend`
+- **Build Command:** `uv sync`
+- **Start Command:** `uv run python -m app.livekit.agent start`
+- **Environment variables:** same as above
+- This process must stay **always-on** (registered with LiveKit Cloud, waiting for job dispatches) — Render's free web-service tier sleeps after inactivity and will miss incoming calls, so this service needs a paid always-on plan (Starter tier or above).
+
+> Note: use the `start` subcommand (not `dev`) for the agent worker in production — `dev` is intended for local development with verbose logging.
+
+Update the frontend's token-fetch URL (`frontend/src/services/livekit.ts` or its `VITE_API_BASE_URL` env var) to point at the deployed FastAPI service's Render URL instead of `localhost`.
 
 ## Known Limitations
 
