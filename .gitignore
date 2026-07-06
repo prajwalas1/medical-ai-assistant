@@ -1,0 +1,28 @@
+# Backend
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/_archive/
+backend/*.db
+backend/*.sqlite3
+backend/output.wav
+backend/test_gemini.py
+backend/test_tts.py
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/_archive/
+
+# Python
+**/__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
