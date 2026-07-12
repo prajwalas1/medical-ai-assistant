@@ -192,4 +192,4 @@ def book_appointment(
     db.commit()
     db.refresh(appointment)
 
-    return appointment
+    return appointment 
