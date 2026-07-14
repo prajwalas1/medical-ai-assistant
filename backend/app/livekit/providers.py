@@ -39,7 +39,7 @@ class ElevenLabsSTTProvider(STTProvider):
 class SarvamLLMProvider(LLMProvider):
     def build(self) -> llm.LLM:
         return sarvam.LLM(
-            model="sarvam-105b",
+            model="sarvam-30b",
             api_key=settings.SARVAM_API_KEY,
             temperature=0,
         )
@@ -102,7 +102,7 @@ STT_SUPPORTED_LANGUAGES: dict[str, set[str]] = {
 
 TTS_SUPPORTED_LANGUAGES: dict[str, set[str]] = {
     "deepgram": {"en"},
-    "elevenlabs": {"en", "hi", "kn"},
+    "elevenlabs": {"en", "hi"},
 }
 
 
