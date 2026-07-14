@@ -13,7 +13,8 @@ from livekit.agents import (
     function_tool,
     inference,
 )
-from livekit.plugins import sarvam  
+from livekit.plugins import sarvam
+from app.livekit.providers import get_stt, get_llm, get_tts, resolve_stt_provider, resolve_tts_provider
 from app.core.config import settings
 from app.database.session import SessionLocal
 from app.utils.parser import parse_date, parse_time
@@ -337,31 +338,45 @@ async def entrypoint(ctx: JobContext):
 
     participant = await ctx.wait_for_participant()
 
-    # Language selection: frontend sets participant metadata as
-    # e.g. '{"language": "hi"}' when minting the token / joining.
+    # Provider + language selection: frontend sets participant metadata as
+    # e.g. '{"language": "hi", "stt_provider": "deepgram", "llm_provider": "sarvam"}'
+    # when minting the token / joining.
     lang_key = "en"
+    stt_provider = "sarvam"
+    llm_provider = "sarvam"
     try:
         if participant.metadata:
             meta = json.loads(participant.metadata)
             lang_key = meta.get("language", "en")
+            stt_provider = meta.get("stt_provider", "sarvam")
+            llm_provider = meta.get("llm_provider", "sarvam")
     except (json.JSONDecodeError, AttributeError):
         pass
 
     bcp47 = LANGUAGE_MAP.get(lang_key, "en-IN")
     language_name = LANGUAGE_NAMES.get(lang_key, "English")
 
-    session = AgentSession(
-        # vad omitted — AgentSession auto-provisions inference.VAD(model="silero")
-        stt=sarvam.STT(language=bcp47, model="saarika:v2.5"),
-        llm=sarvam.LLM(
-            model="sarvam-105b",
-            api_key=settings.SARVAM_API_KEY,
-            temperature=0,
-            
-        ),
-        tts=sarvam.TTS(target_language_code=bcp47, model="bulbul:v3", speaker="shubh"),
+    # Resolve providers BEFORE building the session so we know what's actually
+    # running (not just what was requested) — the requested provider may get
+    # silently swapped for Sarvam if it doesn't support this language.
+    resolved_stt_provider = resolve_stt_provider(stt_provider, bcp47)
+    resolved_tts_provider = resolve_tts_provider(stt_provider, bcp47)
+
+    session_kwargs = dict(
+        stt=get_stt(stt_provider, bcp47),
+        llm=get_llm(llm_provider),
+        tts=get_tts(stt_provider, bcp47),
         turn_detection=inference.TurnDetector(),
     )
+
+    # Sarvam handles VAD internally, so AgentSession must not auto-provision
+    # its own default VAD when Sarvam is the STT actually in use — whether
+    # that's because the user picked Sarvam directly, or because Deepgram/
+    # ElevenLabs silently fell back to it for this language.
+    if resolved_stt_provider == "sarvam":
+        session_kwargs["vad"] = None
+
+    session = AgentSession(**session_kwargs)
 
     await session.start(
         room=ctx.room,
@@ -375,7 +390,6 @@ async def entrypoint(ctx: JobContext):
             "how you can help, in the configured language."
         )
     )
-
 
 if __name__ == "__main__":
     agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))

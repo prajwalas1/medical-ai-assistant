@@ -15,10 +15,14 @@ export interface TokenResponse {
 }
 
 export async function fetchLiveKitToken(
-  language: string
+  language: string,
+  sttProvider: string = "sarvam",
+  llmProvider: string = "sarvam"
 ): Promise<TokenResponse> {
   const response = await api.post<TokenResponse>("/livekit/token", {
     language,
+    stt_provider: sttProvider,
+    llm_provider: llmProvider,
   });
   return response.data;
 }

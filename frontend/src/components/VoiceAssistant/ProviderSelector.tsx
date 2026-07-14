@@ -1,21 +1,35 @@
-import { Globe2, ChevronDown } from "lucide-react";
+import { type LucideIcon, ChevronDown } from "lucide-react";
 
-interface LanguageSelectorProps {
+interface ProviderOption {
   value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
+  label: string;
+  supportedLanguages: string[];
 }
 
-export default function LanguageSelector({
+interface ProviderSelectorProps {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  onChange: (value: string) => void;
+  options: ProviderOption[];
+  disabled?: boolean;
+  language: string;
+}
+
+export default function ProviderSelector({
+  label,
+  icon: Icon,
   value,
   onChange,
+  options,
   disabled,
-}: LanguageSelectorProps) {
+  language,
+}: ProviderSelectorProps) {
   return (
     <div>
       <label className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-slate-500 mb-1.5">
-        <Globe2 size={13} />
-        Language
+        <Icon size={13} />
+        {label}
       </label>
       <div className="relative">
         <select
@@ -24,9 +38,15 @@ export default function LanguageSelector({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
         >
-          <option value="en">English</option>
-          <option value="hi">Hindi</option>
-          <option value="kn">Kannada</option>
+          {options.map((opt) => {
+            const locked = !opt.supportedLanguages.includes(language);
+            return (
+              <option key={opt.value} value={opt.value} disabled={locked}>
+                {opt.label}
+                {locked ? " — not supported" : ""}
+              </option>
+            );
+          })}
         </select>
         <ChevronDown
           size={16}

@@ -26,3 +26,4 @@ frontend/_archive/
 # OS
 .DS_Store
 Thumbs.db
+backend/test_join.py

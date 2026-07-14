@@ -18,8 +18,8 @@ export function useVoice() {
   const roomRef = useRef<Room | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
 
-  async function startCall(language: string = "en") {
-    const { token, url } = await fetchLiveKitToken(language);
+  async function startCall(language: string = "en",sttProvider: string = "sarvam",llmProvider: string = "sarvam") {
+    const { token, url } = await fetchLiveKitToken(language,sttProvider,llmProvider);
 
     const room = new Room();
     roomRef.current = room;

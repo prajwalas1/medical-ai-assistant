@@ -15,6 +15,8 @@ class TokenRequest(BaseModel):
     identity: str | None = None
     room_name: str | None = None
     language: str = "en"  # "en" | "hi" | "kn"
+    stt_provider: str = "sarvam"   # "sarvam" | "deepgram" | "elevenlabs"
+    llm_provider: str = "sarvam"   # "sarvam" | "openai" | "gemini"
 
 
 class TokenResponse(BaseModel):
@@ -36,7 +38,7 @@ def create_token(request: TokenRequest):
         )
         .with_identity(identity)
         .with_name(identity)
-        .with_metadata(json.dumps({"language": request.language}))
+        .with_metadata(json.dumps({"language": request.language,"stt_provider": request.stt_provider,"llm_provider": request.llm_provider,}))
         .with_grants(
             api.VideoGrants(
                 room_join=True,
@@ -54,4 +56,11 @@ def create_token(request: TokenRequest):
         url=settings.LIVEKIT_URL,
         room_name=room_name,
         identity=identity,
-    )
+    )  
+
+
+
+
+
+
+

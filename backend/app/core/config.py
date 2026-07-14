@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     # Sarvam
     SARVAM_API_KEY: str
+    DEEPGRAM_API_KEY: str
+    ELEVENLABS_API_KEY: str
+
 
     model_config = SettingsConfigDict(
         env_file=".env",
